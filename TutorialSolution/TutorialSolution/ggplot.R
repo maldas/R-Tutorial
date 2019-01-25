@@ -1,33 +1,29 @@
-library(ggplot2)
+df <- data.frame(gp = factor(rep(letters[1:3], each = 10)),
+                 y = rnorm(30))
+# Compute sample mean and standard deviation in each group
+ds <- plyr::ddply(df, "gp", plyr::summarise, mean = mean(y), sd = sd(y))
 
-# create factors with value labels 
-mtcars$gear <- factor(mtcars$gear, levels = c(3, 4, 5),
-   labels = c("3gears", "4gears", "5gears"))
-mtcars$am <- factor(mtcars$am, levels = c(0, 1),
-   labels = c("Automatic", "Manual"))
-mtcars$cyl <- factor(mtcars$cyl, levels = c(4, 6, 8),
-   labels = c("4cyl", "6cyl", "8cyl"))
-
-# Kernel density plots for mpg
-# grouped by number of gears (indicated by color)
-qplot(mpg, data = mtcars, geom = "density", fill = gear, alpha = I(.5),
-   main = "Distribution of Gas Milage", xlab = "Miles Per Gallon",
-   ylab = "Density")
-
-# Scatterplot of mpg vs. hp for each combination of gears and cylinders
-# in each facet, transmittion type is represented by shape and color
-qplot(hp, mpg, data = mtcars, shape = am, color = am,
-   facets = gear ~ cyl, size = I(3),
-   xlab = "Horsepower", ylab = "Miles per Gallon")
-
-# Separate regressions of mpg on weight for each number of cylinders
-qplot(wt, mpg, data = mtcars, geom = c("point", "smooth"),
-   method = "lm", formula = y ~ x, color = cyl,
-   main = "Regression of MPG on Weight",
-   xlab = "Weight", ylab = "Miles per Gallon")
-
-# Boxplots of mpg by number of gears 
-# observations (points) are overlayed and jittered
-qplot(gear, mpg, data = mtcars, geom = c("boxplot", "jitter"),
-   fill = gear, main = "Mileage by Gear Number",
-   xlab = "", ylab = "Miles per Gallon")
+# Declare the data frame and common aesthetics.
+# The summary data frame ds is used to plot
+# larger red points in a second geom_point() layer.
+# If the data = argument is not specified, it uses the
+# declared data frame from ggplot(); ditto for the aesthetics.
+ggplot(df, aes(x = gp, y = y)) +
+    geom_point() +
+    geom_point(data = ds, aes(y = mean),
+              colour = 'red', size = 3)
+# Same plot as above, declaring only the data frame in ggplot().
+# Note how the x and y aesthetics must now be declared in
+# each geom_point() layer.
+ggplot(df) +
+    geom_point(aes(x = gp, y = y)) +
+    geom_point(data = ds, aes(x = gp, y = mean),
+                 colour = 'red', size = 3)
+# Set up a skeleton ggplot object and add layers:
+ggplot() +
+    geom_point(data = df, aes(x = gp, y = y)) +
+    geom_point(data = ds, aes(x = gp, y = mean),
+                        colour = 'red', size = 3) +
+                        geom_errorbar(data = ds, aes(x = gp, y = mean,
+                    ymin = mean - sd, ymax = mean + sd),
+                    colour = 'red', width = 0.4)
